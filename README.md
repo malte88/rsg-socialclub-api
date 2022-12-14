@@ -22,3 +22,5 @@ For the first start go into .env file and set SC_LOGIN to true and specify a Por
 Start the script with `npm run start` or `node .` and login to the browser window that opens and make sure to check Remember Me to stay logged in.
 
 Stop the script and set SC_LOGIN back to false now just start and let it run to always get fresh bearertoken.
+
+To test the api go to `http://localhost:4000/api/getProfile/name=<profilename>` if you use the standart port
