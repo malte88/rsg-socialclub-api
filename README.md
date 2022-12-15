@@ -8,13 +8,13 @@ Setup:
 ```
 git clone https://github.com/jdjdpsjsjdlsk/rsg-socialclub-api.git
 cd rsg-socialclub-api
-npm install dotenv puppeteer node-schedule express request
+npm install dotenv puppeteer node-schedule express request cli-color
 ```
 
 or if you already have it downloaded:
 
 ```
-npm install dotenv puppeteer node-schedule express request
+npm install dotenv puppeteer node-schedule express request cli-color
 ```
 
 For the first start go into .env file and set SC_LOGIN to true and specify a Port for the API to use.
