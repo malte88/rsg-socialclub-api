@@ -75,7 +75,7 @@ async function reloadBearer() {
       await page.click(
         ".loginform__submitField__NdeFI .loginform__submitActions__dWo_j .UI__Button-socialclub__btn"
       ),
-      await (await page.$('input[name=password]')).press('Enter'),
+      await (await page.$("input[name=password]")).press("Enter"),
       page.waitForNavigation({ waitUntil: "networkidle0" }),
     ]);
     logConsole(
@@ -180,14 +180,57 @@ reloadBearer();
 
 const request = require("request");
 
+app.get("/api/getProfile/name=:name&maxFriends=:maxFriends", (req, res) => {
+  const accountname = req.params.name;
+  const maxFriends = req.params.maxFriends;
+  logConsole(`Request for ${clc.yellow(accountname)}`);
+  const options = {
+    url:
+      "https://scapi.rockstargames.com/profile/getprofile?nickname=" +
+      accountname +
+      "&maxFriends=" +
+      maxFriends,
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+      Authorization: "Bearer " + bearer,
+    },
+  };
+
+  request(options, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      try {
+        const info = JSON.parse(body);
+        debugConsole(info);
+        const resInfo = info.accounts[0];
+        res.statusCode = 200;
+        res.send(resInfo);
+        const ok = clc.green("200/OK");
+        logConsole(`Request status ${ok}`);
+      } catch (err) {
+        res.statusCode = 500;
+        res.send({
+          error: "The player does not exist",
+        });
+        const fail = clc.red(res.statusCode + "/FAIL");
+        logConsole(`Request status ${fail}`);
+      }
+    } else {
+      res.statusCode = response.statusCode;
+      res.send({
+        error: "An error occured, try again in a few seconds",
+      });
+      logConsole(`Request status ${res.statusCode}/FAIL`);
+    }
+  });
+});
+
 app.get("/api/getProfile/name=:name", (req, res) => {
   const accountname = req.params.name;
   logConsole(`Request for ${clc.yellow(accountname)}`);
   const options = {
     url:
       "https://scapi.rockstargames.com/profile/getprofile?nickname=" +
-      accountname +
-      "&maxFriends=3",
+      accountname,
     headers: {
       "X-Requested-With": "XMLHttpRequest",
       Authorization: "Bearer " + bearer,
