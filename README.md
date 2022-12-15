@@ -11,15 +11,9 @@ cd rsg-socialclub-api
 npm install dotenv puppeteer node-schedule express request cli-color
 ```
 
-or if you already have it downloaded:
+For the first start go into .env file and set SC_LOGIN to true and specify a Port for the API to use, also fill SC_EMAIL and SC_PASSWD with your socialclub credentials for automatic login.
 
-```
-npm install dotenv puppeteer node-schedule express request cli-color
-```
-
-For the first start go into .env file and set SC_LOGIN to true and specify a Port for the API to use.
-
-Start the script with `npm run start` or `node .` and login to the browser window that opens and make sure to check Remember Me to stay logged in.
+Start the script with `npm run start` or `node .` and wait for the message that says login complete.
 
 Stop the script and set SC_LOGIN back to false now just start and let it run to always get fresh bearertoken.
 
