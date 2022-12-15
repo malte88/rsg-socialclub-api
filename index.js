@@ -8,6 +8,7 @@ var clc = require("cli-color");
 
 var url = "";
 var sc_login = false;
+var headless = true;
 var debug = true;
 var showbearer = false;
 var bearer = "";
@@ -28,6 +29,12 @@ if (process.env.DEBUG_MODE === "true") {
   debug = false;
 }
 
+if (process.env.HEADLESS === "true") {
+  headless = true;
+} else {
+  headless = false;
+}
+
 if (process.env.OUTPUT_BEARER === "true") {
   showbearer = true;
 } else {
@@ -38,7 +45,7 @@ async function reloadBearer() {
   apiDown = true;
   const browser = await puppeteer.launch({
     userDataDir: "./user_data",
-    headless: !sc_login,
+    headless: headless,
     args: ["--no-sandbox"],
   });
   const page = await browser.newPage();
@@ -53,6 +60,27 @@ async function reloadBearer() {
   debugConsole(`Loaded Page`);
 
   if (sc_login) {
+    const passwd = process.env.SC_PASSWD;
+    const email = process.env.SC_EMAIL;
+
+    //[name='email'][type='email']
+    await page.type("input[name=email]", email);
+    //[name='password'][type='password']
+    await page.type("input[name=password]", passwd);
+    //[name='keepMeSignedIn']
+    await page.click("[name=keepMeSignedIn]");
+    //.loginform__submitField__NdeFI .loginform__submitActions__dWo_j .UI__Button-socialclub__btn
+    //await page.click("#onetrust-button-group-parent #onetrust-button-group #onetrust-accept-btn-handler");
+    await Promise.all([
+      await page.click(
+        ".loginform__submitField__NdeFI .loginform__submitActions__dWo_j .UI__Button-socialclub__btn"
+      ),
+      await (await page.$('input[name=password]')).press('Enter'),
+      page.waitForNavigation({ waitUntil: "networkidle0" }),
+    ]);
+    logConsole(
+      "Logged in! Set SC_LOGIN in .env back to false and restart the Application."
+    );
     return;
   }
 
@@ -86,7 +114,9 @@ async function reloadBearer() {
   }
 
   logConsole(`Got new Bearer that is valid till ${clc.yellow(dateString)}`);
-  debugConsole(`Token expires: ${clc.yellow(expires)} / ${clc.yellow(dateString)}`);
+  debugConsole(
+    `Token expires: ${clc.yellow(expires)} / ${clc.yellow(dateString)}`
+  );
 
   setTimer(expires);
 }
@@ -99,11 +129,11 @@ function debugConsole(text) {
 }
 function errorConsole(text) {
   var dateString = clc.yellow(new Date().toLocaleTimeString());
-    console.log(`[${dateString}] [${clc.red("ERROR")}] => ${text}`);
+  console.log(`[${dateString}] [${clc.red("ERROR")}] => ${text}`);
 }
 function logConsole(text) {
   var dateString = clc.yellow(new Date().toLocaleTimeString());
-    console.log(`[${dateString}] [${clc.yellow("API")}] => ${text}`);
+  console.log(`[${dateString}] [${clc.yellow("API")}] => ${text}`);
 }
 
 function parseJwt(token) {
@@ -128,7 +158,11 @@ async function setTimer(expires) {
 
   const currentDate = new Date().getTime();
 
-  debugConsole(`Expires: ${clc.yellow(theDate.getTime())}, now is: ${clc.yellow(currentDate)}`);
+  debugConsole(
+    `Expires: ${clc.yellow(theDate.getTime())}, now is: ${clc.yellow(
+      currentDate
+    )}`
+  );
 
   if (theDate.getTime() < currentDate) {
     reloadBearer();
@@ -189,8 +223,11 @@ app.get("/api/getProfile/name=:name", (req, res) => {
 });
 
 var api_port = parseInt(process.env.API_PORT);
-
-app.listen(api_port, () => logConsole(`Alive on Port: ${clc.yellow(api_port)}`));
+if (!sc_login) {
+  app.listen(api_port, () =>
+    logConsole(`Alive on Port: ${clc.yellow(api_port)}`)
+  );
+}
 
 process.on("uncaughtException", function (err) {
   errorConsole(err);
