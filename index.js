@@ -135,16 +135,24 @@ app.get("/api/getProfile/name=:name", (req, res) => {
 
   request(options, function (error, response, body) {
     if (!error && response.statusCode == 200) {
-      const info = JSON.parse(body);
-      res.statusCode = 200;
-      res.send(info.accounts[0]);
-      console.log("[API] => Request status 200/OK");
+      try {
+        const info = JSON.parse(body);
+        const resInfo = info.accounts[0];
+        res.statusCode = 200;
+        res.send(resInfo);
+        console.log("[API] => Request status 200/OK");
+      } catch (err) {
+        res.statusCode = 500;
+        res.send({
+          error: "The player does not exist",
+        });
+        console.log(`[API] => Request status ${res.statusCode}/FAIL`);
+      }
     } else {
-      console.log("[API] => Request failed " + response.statusCode);
       res.statusCode = response.statusCode;
       res.send({
         error: "An error occured, try again in a few seconds",
-      })
+      });
       console.log(`[API] => Request status ${res.statusCode}/FAIL`);
     }
   });
@@ -153,3 +161,8 @@ app.get("/api/getProfile/name=:name", (req, res) => {
 var api_port = parseInt(process.env.API_PORT);
 
 app.listen(api_port, () => console.log("[API] => Alive on Port: " + api_port));
+
+process.on("uncaughtException", function (err) {
+  console.error(err);
+  console.log("Node NOT Exiting...");
+});
