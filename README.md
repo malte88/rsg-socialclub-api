@@ -18,3 +18,5 @@ Start the script with `npm run start` or `node .` and wait for the message that 
 Stop the script and set SC_LOGIN back to false now just start and let it run to always get fresh bearertoken.
 
 To test the api go to `http://localhost:4000/api/getProfile/name=<profilename>` if you use the standard port
+
+I also have an Discordbot for use with this API https://github.com/jdjdpsjsjdlsk/discordbot-for-scapi
