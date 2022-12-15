@@ -4,6 +4,7 @@ const puppeteer = require("puppeteer");
 const schedule = require("node-schedule");
 const express = require("express");
 const app = express();
+var clc = require("cli-color");
 
 var url = "";
 var sc_login = false;
@@ -49,7 +50,7 @@ async function reloadBearer() {
   await page.goto(url, {
     waitUntil: "networkidle2",
   });
-  debugConsole(`[${new Date().toLocaleTimeString()}] => Loaded Page`);
+  debugConsole(`Loaded Page`);
 
   if (sc_login) {
     return;
@@ -70,7 +71,7 @@ async function reloadBearer() {
   bearer = data[index].value;
 
   if (showbearer) {
-    console.log(bearer);
+    logConsole(bearer);
   }
 
   const { payload } = parseJwt(bearer);
@@ -79,16 +80,30 @@ async function reloadBearer() {
   var theDate = new Date(expires * 1000);
   dateString = theDate.toLocaleTimeString();
 
-  console.log(`[${new Date().toLocaleTimeString()}] => Got new Bearer that is valid till ${dateString}`);
-  debugConsole(`[${new Date().toLocaleTimeString()}] => Token expires: ${expires} / ${dateString}`);
+  const currentDate = new Date().getTime();
 
-  setTimer(theDate);
+  if (expires < currentDate) {
+  }
+
+  logConsole(`Got new Bearer that is valid till ${clc.yellow(dateString)}`);
+  debugConsole(`Token expires: ${clc.yellow(expires)} / ${clc.yellow(dateString)}`);
+
+  setTimer(expires);
 }
 
 function debugConsole(text) {
   if (debug) {
-    console.log(text);
+    var dateString = clc.yellow(new Date().toLocaleTimeString());
+    console.log(`[${dateString}] [${clc.yellow("DEBUG")}] => ${text}`);
   }
+}
+function errorConsole(text) {
+  var dateString = clc.yellow(new Date().toLocaleTimeString());
+    console.log(`[${dateString}] [${clc.red("ERROR")}] => ${text}`);
+}
+function logConsole(text) {
+  var dateString = clc.yellow(new Date().toLocaleTimeString());
+    console.log(`[${dateString}] [${clc.yellow("API")}] => ${text}`);
 }
 
 function parseJwt(token) {
@@ -107,10 +122,22 @@ function parseJwt(token) {
   return { payload };
 }
 
-async function setTimer(date) {
-  debugConsole(`[${new Date().toLocaleTimeString()}] => Setting timer at ${date.toLocaleTimeString()}`);
-  const job = schedule.scheduleJob(date, function () {
-    debugConsole(`[${new Date().toLocaleTimeString()}] => calling reloadBearer()`);
+async function setTimer(expires) {
+  var theDate = new Date(expires * 1000);
+  date = theDate.toLocaleTimeString();
+
+  const currentDate = new Date().getTime();
+
+  debugConsole(`Expires: ${clc.yellow(theDate.getTime())}, now is: ${clc.yellow(currentDate)}`);
+
+  if (theDate.getTime() < currentDate) {
+    reloadBearer();
+    return;
+  }
+
+  debugConsole("Setting timer at " + clc.yellow(date));
+  const job = schedule.scheduleJob(theDate, function () {
+    debugConsole(`calling reloadBearer()`);
     reloadBearer();
   });
 }
@@ -121,7 +148,7 @@ const request = require("request");
 
 app.get("/api/getProfile/name=:name", (req, res) => {
   const accountname = req.params.name;
-  console.log(`[${new Date().toLocaleTimeString()}] => Request for ${accountname}`);
+  logConsole(`Request for ${clc.yellow(accountname)}`);
   const options = {
     url:
       "https://scapi.rockstargames.com/profile/getprofile?nickname=" +
@@ -141,29 +168,31 @@ app.get("/api/getProfile/name=:name", (req, res) => {
         const resInfo = info.accounts[0];
         res.statusCode = 200;
         res.send(resInfo);
-        console.log(`[${new Date().toLocaleTimeString()}] => Request status 200/OK`);
+        const ok = clc.green("200/OK");
+        logConsole(`Request status ${ok}`);
       } catch (err) {
         res.statusCode = 500;
         res.send({
           error: "The player does not exist",
         });
-        console.log(`[${new Date().toLocaleTimeString()}] => Request status ${res.statusCode}/FAIL`);
+        const fail = clc.red(res.statusCode + "/FAIL");
+        logConsole(`Request status ${fail}`);
       }
     } else {
       res.statusCode = response.statusCode;
       res.send({
         error: "An error occured, try again in a few seconds",
       });
-      console.log(`[${new Date().toLocaleTimeString()}] => Request status ${res.statusCode}/FAIL`);
+      logConsole(`Request status ${res.statusCode}/FAIL`);
     }
   });
 });
 
 var api_port = parseInt(process.env.API_PORT);
 
-app.listen(api_port, () => console.log(`[${new Date().toLocaleTimeString()}] => Alive on Port: ${api_port}`));
+app.listen(api_port, () => logConsole(`Alive on Port: ${clc.yellow(api_port)}`));
 
 process.on("uncaughtException", function (err) {
-  console.error(err);
-  console.log("Node NOT Exiting...");
+  errorConsole(err);
+  logConsole("Node NOT Exiting...");
 });
