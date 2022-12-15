@@ -49,7 +49,7 @@ async function reloadBearer() {
   await page.goto(url, {
     waitUntil: "networkidle2",
   });
-  debugConsole("[API] => Loaded Page");
+  debugConsole(`[${new Date().toLocaleTimeString()}] => Loaded Page`);
 
   if (sc_login) {
     return;
@@ -68,7 +68,6 @@ async function reloadBearer() {
 
   //fs.writeFileSync("./cookies.json", JSON.stringify(data));
   bearer = data[index].value;
-  console.log("[API] => Got new Bearer");
 
   if (showbearer) {
     console.log(bearer);
@@ -80,7 +79,8 @@ async function reloadBearer() {
   var theDate = new Date(expires * 1000);
   dateString = theDate.toLocaleTimeString();
 
-  debugConsole("[API] => Token expires: " + expires + " / " + dateString);
+  console.log(`[${new Date().toLocaleTimeString()}] => Got new Bearer that is valid till ${dateString}`);
+  debugConsole(`[${new Date().toLocaleTimeString()}] => Token expires: ${expires} / ${dateString}`);
 
   setTimer(theDate);
 }
@@ -108,9 +108,9 @@ function parseJwt(token) {
 }
 
 async function setTimer(date) {
-  debugConsole("[API] => Setting timer at " + date.toLocaleTimeString());
+  debugConsole(`[${new Date().toLocaleTimeString()}] => Setting timer at ${date.toLocaleTimeString()}`);
   const job = schedule.scheduleJob(date, function () {
-    debugConsole("calling reloadBearer()");
+    debugConsole(`[${new Date().toLocaleTimeString()}] => calling reloadBearer()`);
     reloadBearer();
   });
 }
@@ -121,7 +121,7 @@ const request = require("request");
 
 app.get("/api/getProfile/name=:name", (req, res) => {
   const accountname = req.params.name;
-  console.log(`[API] => Request for ${accountname}`);
+  console.log(`[${new Date().toLocaleTimeString()}] => Request for ${accountname}`);
   const options = {
     url:
       "https://scapi.rockstargames.com/profile/getprofile?nickname=" +
@@ -137,30 +137,31 @@ app.get("/api/getProfile/name=:name", (req, res) => {
     if (!error && response.statusCode == 200) {
       try {
         const info = JSON.parse(body);
+        debugConsole(info);
         const resInfo = info.accounts[0];
         res.statusCode = 200;
         res.send(resInfo);
-        console.log("[API] => Request status 200/OK");
+        console.log(`[${new Date().toLocaleTimeString()}] => Request status 200/OK`);
       } catch (err) {
         res.statusCode = 500;
         res.send({
           error: "The player does not exist",
         });
-        console.log(`[API] => Request status ${res.statusCode}/FAIL`);
+        console.log(`[${new Date().toLocaleTimeString()}] => Request status ${res.statusCode}/FAIL`);
       }
     } else {
       res.statusCode = response.statusCode;
       res.send({
         error: "An error occured, try again in a few seconds",
       });
-      console.log(`[API] => Request status ${res.statusCode}/FAIL`);
+      console.log(`[${new Date().toLocaleTimeString()}] => Request status ${res.statusCode}/FAIL`);
     }
   });
 });
 
 var api_port = parseInt(process.env.API_PORT);
 
-app.listen(api_port, () => console.log("[API] => Alive on Port: " + api_port));
+app.listen(api_port, () => console.log(`[${new Date().toLocaleTimeString()}] => Alive on Port: ${api_port}`));
 
 process.on("uncaughtException", function (err) {
   console.error(err);
