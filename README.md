@@ -4,7 +4,7 @@
 
 Get Profileinfo for RockstarGames profiles with your selfhosted API
 
-Setup:
+### Setup:
 ```
 git clone https://github.com/jdjdpsjsjdlsk/rsg-socialclub-api.git
 cd rsg-socialclub-api
