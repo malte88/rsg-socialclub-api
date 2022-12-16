@@ -8,7 +8,7 @@ Get Profileinfo for RockstarGames profiles with your selfhosted API
 ```
 git clone https://github.com/jdjdpsjsjdlsk/rsg-socialclub-api.git
 cd rsg-socialclub-api
-npm install dotenv puppeteer node-schedule express request cli-color
+npm install
 ```
 
 For the first start go into .env file and set SC_LOGIN to true and specify a Port for the API to use, also fill SC_EMAIL and SC_PASSWD with your socialclub credentials for automatic login.
