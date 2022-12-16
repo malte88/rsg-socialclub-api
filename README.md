@@ -20,4 +20,4 @@ Stop the script and set SC_LOGIN back to false now just start and let it run to 
 To test the api go to `http://localhost:4000/api/getProfile/name=<profilename>` if you use the standard port.
 Optionally you could add `&maxFriends=<maxfriends>` to the request to limit the max amount of friends to be sent.
 
-I also have an Discordbot for use with this API https://github.com/jdjdpsjsjdlsk/discordbot-for-scapi
+### I also have an Discordbot for use with this API https://github.com/jdjdpsjsjdlsk/discordbot-for-scapi
