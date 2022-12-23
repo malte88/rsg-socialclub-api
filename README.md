@@ -11,11 +11,11 @@ cd rsg-socialclub-api
 npm install
 ```
 
-For the first start go into .env file and set SC_LOGIN to true and specify a Port for the API to use, also fill SC_EMAIL and SC_PASSWD with your socialclub credentials for automatic login.
+For the first start rename .env.example file to .env and fill SC_EMAIL and SC_PASSWD with your socialclub credentials for automatic login.
 
 Start the script with `npm run start` or `node .` and wait for the message that says login complete.
 
-Stop the script and set SC_LOGIN back to false now just start and let it run to always get fresh bearertoken.
+Stop the script and set SC_LOGIN in .env file to false now just start and let it run to always get fresh bearertoken.
 
 To test the api go to `http://localhost:4000/api/getProfile/name=<profilename>` if you use the standard port.
 Optionally you could add `&maxFriends=<maxfriends>` to the request to limit the max amount of friends to be sent.
