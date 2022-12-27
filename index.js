@@ -1,67 +1,69 @@
-require("dotenv").config();
+const {
+  API_PORT,
+  SC_EMAIL,
+  SC_PASSWD,
+  SC_LOGIN,
+  HEADLESS,
+  DEBUG_MODE,
+  OUTPUT_BEARER,
+  STEALTH_MODE,
+} = require("./config.json");
 const fs = require("fs");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-extra");
+const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+const UserAgent = require("user-agents");
+const { executablePath } = require("puppeteer");
 const schedule = require("node-schedule");
 const express = require("express");
 const app = express();
 var clc = require("cli-color");
 
 var url = "";
-var sc_login = false;
-var headless = true;
-var debug = true;
-var showbearer = false;
 var bearer = "";
 
-if (process.env.SC_LOGIN === "true") {
-  sc_login = true;
+if (SC_LOGIN) {
   url = "https://signin.rockstargames.com/signin/user-form?cid=socialclub";
-} else if (process.env.SC_LOGIN == "false") {
-  sc_login = false;
+  debugConsole("Setting url to " + url);
+} else {
   url = "https://socialclub.rockstargames.com/";
-} else {
-  process.exit();
+  debugConsole("Setting url to " + url);
 }
 
-if (process.env.DEBUG_MODE === "true") {
-  debug = true;
-} else {
-  debug = false;
-}
-
-if (process.env.HEADLESS === "true") {
-  headless = true;
-} else {
-  headless = false;
-}
-
-if (process.env.OUTPUT_BEARER === "true") {
-  showbearer = true;
-} else {
-  showbearer = false;
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 async function reloadBearer() {
   apiDown = true;
+
+  if (STEALTH_MODE) {
+    puppeteer.use(StealthPlugin());
+  }
+
   const browser = await puppeteer.launch({
     userDataDir: "./user_data",
-    headless: headless,
+    executablePath: executablePath(),
+    headless: HEADLESS,
     args: ["--no-sandbox"],
   });
   const page = await browser.newPage();
 
-  await page.setUserAgent(
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
-  );
+  const userAgent = new UserAgent();
+  await page.setUserAgent(userAgent.toString());
 
+  debugConsole("Navigating to " + url);
   await page.goto(url, {
     waitUntil: "networkidle2",
   });
   debugConsole(`Loaded Page`);
 
-  if (sc_login) {
-    const passwd = process.env.SC_PASSWD;
-    const email = process.env.SC_EMAIL;
+  if (SC_LOGIN) {
+    let passwd = SC_PASSWD;
+    let email = SC_EMAIL;
+
+    debugConsole("Trying to login with " + email);
 
     //[name='email'][type='email']
     await page.type("input[name=email]", email);
@@ -76,12 +78,15 @@ async function reloadBearer() {
         ".loginform__submitField__NdeFI .loginform__submitActions__dWo_j .UI__Button-socialclub__btn"
       ),
       await (await page.$("input[name=password]")).press("Enter"),
-      page.waitForNavigation({ waitUntil: "networkidle0" }),
+      await page.waitForNavigation({ waitUntil: "networkidle0" }),
     ]);
     logConsole(
       "Logged in! Set SC_LOGIN in .env back to false and restart the Application."
     );
-    return;
+    await sleep(1500);
+    browser.close();
+    await sleep(500);
+    process.exit();
   }
 
   var data = await page.cookies();
@@ -98,7 +103,7 @@ async function reloadBearer() {
   //fs.writeFileSync("./cookies.json", JSON.stringify(data));
   bearer = data[index].value;
 
-  if (showbearer) {
+  if (OUTPUT_BEARER) {
     logConsole(bearer);
   }
 
@@ -122,7 +127,7 @@ async function reloadBearer() {
 }
 
 function debugConsole(text) {
-  if (debug) {
+  if (DEBUG_MODE) {
     var dateString = clc.yellow(new Date().toLocaleTimeString());
     console.log(`[${dateString}] [${clc.yellow("DEBUG")}] => ${text}`);
   }
@@ -158,12 +163,6 @@ async function setTimer(expires) {
 
   const currentDate = new Date().getTime();
 
-  debugConsole(
-    `Expires: ${clc.yellow(theDate.getTime())}, now is: ${clc.yellow(
-      currentDate
-    )}`
-  );
-
   if (theDate.getTime() < currentDate) {
     reloadBearer();
     return;
@@ -179,6 +178,7 @@ async function setTimer(expires) {
 reloadBearer();
 
 const request = require("request");
+const { User } = require("discord.js");
 
 app.get("/api/getProfile/name=:name&maxFriends=:maxFriends", (req, res) => {
   const accountname = req.params.name;
@@ -265,10 +265,9 @@ app.get("/api/getProfile/name=:name", (req, res) => {
   });
 });
 
-var api_port = parseInt(process.env.API_PORT);
-if (!sc_login) {
-  app.listen(api_port, () =>
-    logConsole(`Alive on Port: ${clc.yellow(api_port)}`)
+if (!SC_LOGIN) {
+  app.listen(API_PORT, () =>
+    logConsole(`Alive on Port: ${clc.yellow(API_PORT)}`)
   );
 }
 
