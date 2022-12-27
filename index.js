@@ -63,7 +63,7 @@ async function reloadBearer() {
     let passwd = SC_PASSWD;
     let email = SC_EMAIL;
 
-    debugConsole("Trying to login with " + email);
+    logConsole("Trying to login with " + email);
 
     //[name='email'][type='email']
     await page.type("input[name=email]", email);
