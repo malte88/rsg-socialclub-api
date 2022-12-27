@@ -15,7 +15,7 @@ For the first start open config.json and fill SC_EMAIL and SC_PASSWD with your s
 
 Start the script with `npm run start` or `node .` and wait for the message that says login complete.
 
-Stop the script and set SC_LOGIN in .env file to false now just start and let it run to always get fresh bearertoken.
+Stop the script and set SC_LOGIN in config file to false now just start and let it run to always get fresh bearertoken.
 
 To test the api go to `http://localhost:4000/api/getProfile/name=<profilename>` if you use the standard port.
 Optionally you could add `&maxFriends=<maxfriends>` to the request to limit the max amount of friends to be sent.
