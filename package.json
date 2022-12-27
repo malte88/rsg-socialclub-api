@@ -6,8 +6,16 @@
   "scripts": {
     "start": "node index.js"
   },
-  "author": "jdjdpsjsjdlsk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jdjdpsjsjdlsk/rsg-socialclub-api.git"
+  },
+  "author": "malte",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jdjdpsjsjdlsk/rsg-socialclub-api/issues"
+  },
+  "homepage": "https://github.com/jdjdpsjsjdlsk/rsg-socialclub-api#readme",
   "dependencies": {
     "cli-color": "^2.0.3",
     "express": "^4.18.2",
