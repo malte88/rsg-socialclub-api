@@ -11,7 +11,7 @@ cd rsg-socialclub-api
 npm install
 ```
 
-For the first start rename .env.example file to .env and fill SC_EMAIL and SC_PASSWD with your socialclub credentials for automatic login.
+For the first start open config.json and fill SC_EMAIL and SC_PASSWD with your socialclub credentials for automatic login.
 
 Start the script with `npm run start` or `node .` and wait for the message that says login complete.
 
