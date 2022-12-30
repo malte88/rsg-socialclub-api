@@ -178,7 +178,6 @@ async function setTimer(expires) {
 reloadBearer();
 
 const request = require("request");
-const { User } = require("discord.js");
 
 app.get("/api/getProfile/name=:name&maxFriends=:maxFriends", (req, res) => {
   const accountname = req.params.name;
