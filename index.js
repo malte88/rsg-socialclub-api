@@ -1,98 +1,108 @@
+const OUTPUT_BEARER = false;
+var first_start = true;
 const {
-  API_PORT,
-  SC_EMAIL,
-  SC_PASSWD,
-  SC_LOGIN,
-  HEADLESS,
-  DEBUG_MODE,
-  OUTPUT_BEARER,
-  STEALTH_MODE,
-} = require("./config.json");
-const fs = require("fs");
-const puppeteer = require("puppeteer-extra");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
-const UserAgent = require("user-agents");
-const { executablePath } = require("puppeteer");
-const schedule = require("node-schedule");
-const express = require("express");
+  api_port,
+  login_port,
+  debug_mode,
+  restart_on_error,
+} = require('./config.json');
+const vanillaPuppeteer = require('puppeteer');
+const { addExtra } = require('puppeteer-extra');
+const puppeteer = addExtra(vanillaPuppeteer);
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker');
+const logger = require('./logger.js');
+puppeteer.use(StealthPlugin());
+puppeteer.use(AdblockerPlugin());
+puppeteer.use(
+  require('puppeteer-extra-plugin-block-resources')({
+    blockedTypes: new Set(['image', 'other']),
+  })
+);
+const UserAgent = require('user-agents');
+const schedule = require('node-schedule');
+const express = require('express');
 const app = express();
-var clc = require("cli-color");
+var clc = require('cli-color');
 
-var url = "";
-var bearer = "";
+var bearer = '';
 
-if (SC_LOGIN) {
-  url = "https://signin.rockstargames.com/signin/user-form?cid=socialclub";
-  debugConsole("Setting url to " + url);
-} else {
-  url = "https://socialclub.rockstargames.com/";
-  debugConsole("Setting url to " + url);
-}
+async function login() {
+  let url = 'https://signin.rockstargames.com/signin/user-form?cid=socialclub';
 
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
+  debugConsole('Started login process...');
+  let PortalPlugin = require('puppeteer-extra-plugin-portal');
+  puppeteer.use(
+    PortalPlugin({
+      webPortalConfig: {
+        listenOpts: {
+          port: login_port,
+        },
+        baseUrl: 'http://127.0.0.1',
+      },
+    })
+  );
+  debugConsole('Trying to start browser...');
+  const browser = await puppeteer.launch({
+    userDataDir: '/scapi/browser_data',
+    headless: true,
+    args: [
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--disable-setuid-sandbox',
+      '--no-sandbox',
+    ],
   });
+  debugConsole('Started browser...');
+  const page = await browser.newPage();
+  debugConsole('Started new tab...');
+
+  const userAgent = new UserAgent();
+  await page.setUserAgent(userAgent.toString());
+
+  debugConsole('Navigating to ' + url);
+  await page.goto(url, {
+    waitUntil: 'networkidle0',
+  });
+  debugConsole(`Loaded Page`);
+  let portalUrl = await page.openPortal();
+  portalUrl = portalUrl.replace('http://127.0.0.1', '');
+  portalUrl = 'http://127.0.0.1:' + login_port + portalUrl;
+  logConsole('Started portal on: ' + portalUrl);
+  logConsole(
+    'Login with your socialclub credentials and dont forget to tick remember me box'
+  );
+  logConsole("Restart the app when you're done.");
 }
 
 async function reloadBearer() {
-  apiDown = true;
-
-  if (STEALTH_MODE) {
-    puppeteer.use(StealthPlugin());
-  }
+  let url = 'https://socialclub.rockstargames.com/';
 
   const browser = await puppeteer.launch({
-    userDataDir: "./user_data",
-    executablePath: executablePath(),
-    headless: HEADLESS,
-    args: ["--no-sandbox"],
+    userDataDir: '/scapi/browser/data',
+    headless: true,
+    args: [
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--disable-setuid-sandbox',
+      '--no-sandbox',
+    ],
   });
   const page = await browser.newPage();
 
   const userAgent = new UserAgent();
   await page.setUserAgent(userAgent.toString());
 
-  debugConsole("Navigating to " + url);
+  debugConsole('Navigating to ' + url);
   await page.goto(url, {
-    waitUntil: "networkidle2",
+    waitUntil: 'networkidle2',
   });
   debugConsole(`Loaded Page`);
-
-  if (SC_LOGIN) {
-    let passwd = SC_PASSWD;
-    let email = SC_EMAIL;
-
-    logConsole("Trying to login with " + email);
-
-    //[name='email'][type='email']
-    await page.type("input[name=email]", email);
-    //[name='password'][type='password']
-    await page.type("input[name=password]", passwd);
-    //[name='keepMeSignedIn']
-    await page.click("[name=keepMeSignedIn]");
-    //.loginform__submitField__NdeFI .loginform__submitActions__dWo_j .UI__Button-socialclub__btn
-    //await page.click("#onetrust-button-group-parent #onetrust-button-group #onetrust-accept-btn-handler");
-    await Promise.all([
-      await page.click(
-        ".loginform__submitField__NdeFI .loginform__submitActions__dWo_j .UI__Button-socialclub__btn"
-      ),
-      await (await page.$("input[name=password]")).press("Enter"),
-      await page.waitForNavigation({ waitUntil: "networkidle0" }),
-    ]);
-    logConsole(
-      "Logged in! Set SC_LOGIN in .env back to false and restart the Application."
-    );
-    await sleep(1500);
-    browser.close();
-    await sleep(500);
-    process.exit();
-  }
 
   var data = await page.cookies();
   browser.close();
   var index = -1;
-  var val = "BearerToken";
+  var val = 'BearerToken';
   var filteredObj = data.find(function (item, i) {
     if (item.name === val) {
       index = i;
@@ -100,8 +110,22 @@ async function reloadBearer() {
     }
   });
 
-  //fs.writeFileSync("./cookies.json", JSON.stringify(data));
-  bearer = data[index].value;
+  try {
+    bearer = data[index].value;
+  } catch (ex) {
+    if (first_start) {
+      errorConsole('Error getting bearer, starting login.\n' + ex);
+      login();
+      return;
+    } else {
+      errorConsole('Error getting bearer, reloading.\n' + ex);
+      reloadBearer();
+      return;
+    }
+  }
+  first_start = false;
+
+  checkUptime();
 
   if (OUTPUT_BEARER) {
     logConsole(bearer);
@@ -125,154 +149,127 @@ async function reloadBearer() {
 
   setTimer(expires);
 }
-
+const ansiStrip = require('cli-color/strip');
 function debugConsole(text) {
-  if (DEBUG_MODE) {
-    var dateString = clc.yellow(new Date().toLocaleTimeString());
-    console.log(`[${dateString}] [${clc.yellow("DEBUG")}] => ${text}`);
-  }
+  if (!debug_mode) return;
+  let dateString = clc.yellow(new Date().toLocaleTimeString());
+  console.log(`[${dateString}] [${clc.yellow('DEBUG')}] => ${text}`);
+  logger.logger.log('info', `[${new Date().toLocaleTimeString()}] [DEBUG] => ${ansiStrip(text)}`);
 }
 function errorConsole(text) {
-  var dateString = clc.yellow(new Date().toLocaleTimeString());
-  console.log(`[${dateString}] [${clc.red("ERROR")}] => ${text}`);
+  let dateString = clc.yellow(new Date().toLocaleTimeString());
+  console.log(`[${dateString}] [${clc.red('ERROR')}] => ${text}`);
+  logger.logger.log('info', `[${new Date().toLocaleTimeString()}] [ERROR] => ${ansiStrip(text)}`);
 }
 function logConsole(text) {
-  var dateString = clc.yellow(new Date().toLocaleTimeString());
-  console.log(`[${dateString}] [${clc.yellow("API")}] => ${text}`);
+  let dateString = clc.yellow(new Date().toLocaleTimeString());
+  console.log(`[${dateString}] [${clc.greenBright('SUCCESS')}] => ${text}`);
+  logger.logger.log('info', `[${new Date().toLocaleTimeString()}] [INFO] => ${ansiStrip(text)}`);
 }
 
 function parseJwt(token) {
-  var base64Url = token.split(".")[1];
-  var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-  var jsonPayload = decodeURIComponent(
+  let base64Url = token.split('.')[1];
+  let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  let jsonPayload = decodeURIComponent(
     atob(base64)
-      .split("")
+      .split('')
       .map(function (c) {
-        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
       })
-      .join("")
+      .join('')
   );
-  var payload = JSON.parse(jsonPayload);
+  let payload = JSON.parse(jsonPayload);
 
   return { payload };
 }
 
 async function setTimer(expires) {
-  var theDate = new Date(expires * 1000);
+  let theDate = new Date(expires * 1000);
   date = theDate.toLocaleTimeString();
 
-  const currentDate = new Date().getTime();
+  let currentDate = new Date().getTime();
 
   if (theDate.getTime() < currentDate) {
     reloadBearer();
     return;
   }
 
-  debugConsole("Setting timer at " + clc.yellow(date));
+  debugConsole('Setting timer at ' + clc.yellow(date));
   const job = schedule.scheduleJob(theDate, function () {
     debugConsole(`calling reloadBearer()`);
     reloadBearer();
   });
 }
 
-//console.log(clc.yellow("\n            ********     ********      *****     *********   ***      \n           **********   *********     *******    **********  ***      \n           **********  ***********    *******    **********  ***      \n           **********  ***********    *******    *** ******  ***      \n           *****       ****   ****   *********   *** ******  ***      \n           ********    ****          **** ****   **********  ***      \n           **********  ****          **** ****   **********  ***      \n             ********  ****         ***********  *********   ***      \n                *****  ****   ****  ***********  ***         ***      \n           **********  ***********  ***********  ***         ***      \n           **********  *********** ****    ***** ***         ***      \n           **********   *********  ****     **** ***         ***      \n            ********     ********  ****     **** ***         ***      \n"));
+logConsole('Starting...');
 
 reloadBearer();
 
-const request = require("request");
+const request = require('request');
 
-app.get("/api/getProfile/name=:name&maxFriends=:maxFriends", (req, res) => {
-  const accountname = req.params.name;
-  const maxFriends = req.params.maxFriends;
+app.get('/api/getProfile/', (req, res) => {
+  let accountname = req.query.name;
+  let maxFriends = req.query.maxFriends;
+  if (!accountname) {
+    res.statusCode = 400;
+    res.send({
+      error: 'Please specify an name',
+      status: 400,
+    });
+    return;
+  }
+  if (!maxFriends) maxFriends = '0';
   logConsole(`Request for ${clc.yellow(accountname)}`);
-  const options = {
+
+  let options = {
     url:
-      "https://scapi.rockstargames.com/profile/getprofile?nickname=" +
+      'https://scapi.rockstargames.com/profile/getprofile?nickname=' +
       accountname +
-      "&maxFriends=" +
+      '&maxFriends=' +
       maxFriends,
     headers: {
-      "X-Requested-With": "XMLHttpRequest",
-      Authorization: "Bearer " + bearer,
+      'X-Requested-With': 'XMLHttpRequest',
+      Authorization: 'Bearer ' + bearer,
     },
   };
 
   request(options, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       try {
-        const info = JSON.parse(body);
+        let info = JSON.parse(body);
         debugConsole(info);
-        const resInfo = info.accounts[0];
+        let resInfo = info.accounts[0];
         res.statusCode = 200;
         res.send(resInfo);
-        const ok = clc.green("200/OK");
+        let ok = clc.green('200/OK');
         logConsole(`Request status ${ok}`);
       } catch (err) {
-        res.statusCode = 500;
+        res.statusCode = 400;
         res.send({
-          error: "The player does not exist",
+          error: 'The player does not exist',
         });
-        const fail = clc.red(res.statusCode + "/FAIL");
+        let fail = clc.red(res.statusCode + '/FAIL');
         logConsole(`Request status ${fail}`);
       }
     } else {
       res.statusCode = response.statusCode;
       res.send({
-        error: "An error occured, try again in a few seconds",
+        error: 'An error occured, try again in a few seconds',
       });
-      logConsole(`Request status ${res.statusCode}/FAIL`);
+      let fail = clc.red(res.statusCode + '/FAIL');
+      logConsole(`Request status ${fail}`);
     }
   });
 });
 
-app.get("/api/getProfile/name=:name", (req, res) => {
-  const accountname = req.params.name;
-  logConsole(`Request for ${clc.yellow(accountname)}`);
-  const options = {
-    url:
-      "https://scapi.rockstargames.com/profile/getprofile?nickname=" +
-      accountname,
-    headers: {
-      "X-Requested-With": "XMLHttpRequest",
-      Authorization: "Bearer " + bearer,
-    },
-  };
+app.listen(api_port, () =>
+  logConsole(`Alive on Port: ${clc.yellow(api_port)}`)
+);
 
-  request(options, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      try {
-        const info = JSON.parse(body);
-        debugConsole(info);
-        const resInfo = info.accounts[0];
-        res.statusCode = 200;
-        res.send(resInfo);
-        const ok = clc.green("200/OK");
-        logConsole(`Request status ${ok}`);
-      } catch (err) {
-        res.statusCode = 500;
-        res.send({
-          error: "The player does not exist",
-        });
-        const fail = clc.red(res.statusCode + "/FAIL");
-        logConsole(`Request status ${fail}`);
-      }
-    } else {
-      res.statusCode = response.statusCode;
-      res.send({
-        error: "An error occured, try again in a few seconds",
-      });
-      logConsole(`Request status ${res.statusCode}/FAIL`);
-    }
-  });
-});
-
-if (!SC_LOGIN) {
-  app.listen(API_PORT, () =>
-    logConsole(`Alive on Port: ${clc.yellow(API_PORT)}`)
-  );
-}
-
-process.on("uncaughtException", function (err) {
+process.on('uncaughtException', function (err) {
   errorConsole(err);
-  logConsole("Node NOT Exiting...");
+  if (restart_on_error) {
+    process.exitCode = 1;
+    process.exit();
+  }
 });

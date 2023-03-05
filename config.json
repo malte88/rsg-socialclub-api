@@ -1,10 +1,6 @@
 {
-    "API_PORT": 4000,
-    "SC_EMAIL": "",
-    "SC_PASSWD": "",
-    "SC_LOGIN": false,
-    "HEADLESS": true,
-    "DEBUG_MODE": false,
-    "OUTPUT_BEARER": false,
-    "STEALTH_MODE": true
+    "api_port": 4000,
+    "login_port": 3000,
+    "debug_mode": false,
+    "restart_on_error": true
 }

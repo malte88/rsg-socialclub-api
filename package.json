@@ -8,22 +8,26 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jdjdpsjsjdlsk/rsg-socialclub-api.git"
+    "url": "git+https://github.com/malte843/rsg-socialclub-api.git"
   },
   "author": "malte",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jdjdpsjsjdlsk/rsg-socialclub-api/issues"
+    "url": "https://github.com/malte843/rsg-socialclub-api/issues"
   },
-  "homepage": "https://github.com/jdjdpsjsjdlsk/rsg-socialclub-api#readme",
+  "homepage": "https://github.com/malte843/rsg-socialclub-api#readme",
   "dependencies": {
     "cli-color": "^2.0.3",
     "express": "^4.18.2",
     "node-schedule": "^2.1.0",
-    "puppeteer": "^19.4.0",
+    "puppeteer": "^19.4.1",
     "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-adblocker": "^2.13.5",
+    "puppeteer-extra-plugin-block-resources": "^2.4.2",
+    "puppeteer-extra-plugin-portal": "^3.1.0",
     "puppeteer-extra-plugin-stealth": "^2.11.1",
     "request": "^2.88.2",
-    "user-agents": "^1.0.1242"
+    "user-agents": "^1.0.1242",
+    "winston": "^3.8.2"
   }
 }
