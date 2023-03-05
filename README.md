@@ -6,11 +6,6 @@ Get Profileinfo for RockstarGames profiles with your selfhosted API
 
 ### I also have an Discordbot for use with this API https://github.com/jdjdpsjsjdlsk/discordbot-for-scapi
 
-### Note
-I added stealth mode option to the script. It is good to keep captchas away but it slows the whole process of logging in and reloading the page quite a bit down. However i recommend it because i was always getting a captchta without it when i tried to automatically login, and had to manually solve the captcha with headless off.
-
-I would recommend to turn the stealthmode off as soon as you are logged in.
-
 ### Setup:
 ```
 git clone https://github.com/jdjdpsjsjdlsk/rsg-socialclub-api.git
