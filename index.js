@@ -169,7 +169,7 @@ function errorConsole(text) {
 }
 function logConsole(text) {
   let dateString = clc.yellow(new Date().toLocaleTimeString());
-  console.log(`[${dateString}] [${clc.greenBright('SUCCESS')}] => ${text}`);
+  console.log(`[${dateString}] [${clc.greenBright('INFO')}] => ${text}`);
   logger.log(
     'info',
     `[${new Date().toLocaleTimeString()}] [INFO] => ${ansiStrip(text)}`
