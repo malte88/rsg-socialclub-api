@@ -6,6 +6,11 @@ const logger = createLogger({
             filename: 'info.log',
             level: 'info',
             format: format.simple()
+        }),
+        new transports.File({
+            filename: 'info.log',
+            level: 'error',
+            format: format.simple()
         })
     ]
 })

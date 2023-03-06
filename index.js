@@ -11,7 +11,7 @@ const { addExtra } = require('puppeteer-extra');
 const puppeteer = addExtra(vanillaPuppeteer);
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker');
-const logger = require('./logger.js');
+const { logger } = require('./logger.js');
 puppeteer.use(StealthPlugin());
 puppeteer.use(AdblockerPlugin());
 puppeteer.use(
@@ -154,17 +154,26 @@ function debugConsole(text) {
   if (!debug_mode) return;
   let dateString = clc.yellow(new Date().toLocaleTimeString());
   console.log(`[${dateString}] [${clc.yellow('DEBUG')}] => ${text}`);
-  logger.logger.log('info', `[${new Date().toLocaleTimeString()}] [DEBUG] => ${ansiStrip(text)}`);
+  logger.log(
+    'info',
+    `[${new Date().toLocaleTimeString()}] [DEBUG] => ${ansiStrip(text)}`
+  );
 }
 function errorConsole(text) {
   let dateString = clc.yellow(new Date().toLocaleTimeString());
   console.log(`[${dateString}] [${clc.red('ERROR')}] => ${text}`);
-  logger.logger.log('info', `[${new Date().toLocaleTimeString()}] [ERROR] => ${ansiStrip(text)}`);
+  logger.log(
+    'error',
+    `[${new Date().toLocaleTimeString()}] [ERROR] => ${ansiStrip(text)}`
+  );
 }
 function logConsole(text) {
   let dateString = clc.yellow(new Date().toLocaleTimeString());
   console.log(`[${dateString}] [${clc.greenBright('SUCCESS')}] => ${text}`);
-  logger.logger.log('info', `[${new Date().toLocaleTimeString()}] [INFO] => ${ansiStrip(text)}`);
+  logger.log(
+    'info',
+    `[${new Date().toLocaleTimeString()}] [INFO] => ${ansiStrip(text)}`
+  );
 }
 
 function parseJwt(token) {
