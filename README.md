@@ -13,9 +13,8 @@ cd rsg-socialclub-api
 npm install
 ```
 
-For the first start open config.json and fill SC_EMAIL and SC_PASSWD with your socialclub credentials for automatic login.
-
-Start the script with `npm run start` or `node .` and wait for the message that says login complete.
+Start the script with `npm run start` or `node .` and wait for the message that says portal started.
+Visit the provided link, login and restart the app.
 
 Stop the script and set SC_LOGIN in config file to false now just start and let it run to always get fresh bearertoken.
 
